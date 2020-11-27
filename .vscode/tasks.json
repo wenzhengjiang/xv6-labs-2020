@@ -12,6 +12,12 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "Push to github",
+            "type": "shell",
+            "command": "git push -u github util",
         }
+
     ]
 }
