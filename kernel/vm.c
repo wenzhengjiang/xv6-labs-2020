@@ -21,30 +21,35 @@ extern char trampoline[]; // trampoline.S
 void
 kvminit()
 {
-  kernel_pagetable = (pagetable_t) kalloc();
-  memset(kernel_pagetable, 0, PGSIZE);
+  kernel_pagetable = kvminit_new();
+}
 
-  // uart registers
-  kvmmap(UART0, UART0, PGSIZE, PTE_R | PTE_W);
-
-  // virtio mmio disk interface
-  kvmmap(VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
-
-  // CLINT
-  kvmmap(CLINT, CLINT, 0x10000, PTE_R | PTE_W);
-
-  // PLIC
-  kvmmap(PLIC, PLIC, 0x400000, PTE_R | PTE_W);
-
-  // map kernel text executable and read-only.
-  kvmmap(KERNBASE, KERNBASE, (uint64)etext-KERNBASE, PTE_R | PTE_X);
-
-  // map kernel data and the physical RAM we'll make use of.
-  kvmmap((uint64)etext, (uint64)etext, PHYSTOP-(uint64)etext, PTE_R | PTE_W);
-
-  // map the trampoline for trap entry/exit to
-  // the highest virtual address in the kernel.
-  kvmmap(TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+pagetable_t kvminit_new() {
+  pagetable_t kpagetable = (pagetable_t) kalloc();
+  memset(kpagetable, 0, PGSIZE);
+ 
+   // uart registers
+  kvmmap_new(kpagetable, UART0, UART0, PGSIZE, PTE_R | PTE_W);
+ 
+   // virtio mmio disk interface
+  kvmmap_new(kpagetable, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+ 
+   // CLINT
+  kvmmap_new(kpagetable, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+ 
+   // PLIC
+  kvmmap_new(kpagetable, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
+ 
+   // map kernel text executable and read-only.
+  kvmmap_new(kpagetable, KERNBASE, KERNBASE, (uint64)etext-KERNBASE, PTE_R | PTE_X);
+ 
+   // map kernel data and the physical RAM we'll make use of.
+  kvmmap_new(kpagetable, (uint64)etext, (uint64)etext, PHYSTOP-(uint64)etext, PTE_R | PTE_W);
+ 
+   // map the trampoline for trap entry/exit to
+   // the highest virtual address in the kernel.
+  kvmmap_new(kpagetable, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+  return kpagetable;
 }
 
 // Switch h/w page table register to the kernel's page table,
@@ -52,8 +57,39 @@ kvminit()
 void
 kvminithart()
 {
-  w_satp(MAKE_SATP(kernel_pagetable));
+  kvminithart_new(kernel_pagetable);
+}
+
+void
+kvminithart_new(pagetable_t kpagetable)
+{
+  w_satp(MAKE_SATP(kpagetable));
   sfence_vma();
+}
+
+void vmprint_level(pagetable_t pagetable, int level) {
+  if (level > 3) {
+    return;
+  }
+  // there are 2^9 = 512 PTEs in a page table.
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if((pte & PTE_V)){
+      // this PTE points to a lower-level page table.
+      uint64 child = PTE2PA(pte);
+      for(int j = 0; j < level; j++) {
+        if (j > 0) printf(" ");
+        printf("..");
+      }
+      printf("%d: pte %p pa %p\n", i, pte, child);
+      vmprint_level((pagetable_t)child, level+1);
+    }
+  }
+}
+
+void vmprint(pagetable_t pagetable) {
+  printf("page table %p\n", pagetable);
+  vmprint_level(pagetable, 1);
 }
 
 // Return the address of the PTE in page table pagetable
@@ -117,8 +153,14 @@ walkaddr(pagetable_t pagetable, uint64 va)
 void
 kvmmap(uint64 va, uint64 pa, uint64 sz, int perm)
 {
-  if(mappages(kernel_pagetable, va, sz, pa, perm) != 0)
-    panic("kvmmap");
+  kvmmap_new(kernel_pagetable, va, pa, sz, perm);
+}
+
+void
+kvmmap_new(pagetable_t kpagetable, uint64 va, uint64 pa, uint64 sz, int perm)
+{
+  if(mappages(kpagetable, va, sz, pa, perm) != 0)
+    panic("kvmmap_new");
 }
 
 // translate a kernel virtual address to
@@ -192,6 +234,22 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     }
     *pte = 0;
   }
+}
+
+// Free a kernel page table without freeing the
+// physical memory it refers to.
+void kernel_freepagetable(pagetable_t pagetable) {
+  // there are 2^9 = 512 PTEs in a page table.
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if((pte & PTE_V) && (pte & (PTE_R|PTE_W|PTE_X)) == 0){
+      // this PTE points to a lower-level page table.
+      uint64 child = PTE2PA(pte);
+      kernel_freepagetable((pagetable_t)child);
+      pagetable[i] = 0;
+    }
+  }
+  kfree((void*)pagetable);
 }
 
 // create an empty user page table.
