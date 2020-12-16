@@ -129,8 +129,10 @@ found:
     return 0;
   }
   // Setup kernel stack mapping
-  uint64 va = KSTACK((int)(p - proc));
-  kvmmap_new(p->kpagetable, va, (uint64)kvmpa(va), PGSIZE, PTE_R | PTE_W);
+  for(struct proc *pp = proc; pp < &proc[NPROC]; pp++) {
+      uint64 va = KSTACK((int) (pp - proc));
+      kvmmap_new(p->kpagetable, va, (uint64)kvmpa(va), PGSIZE, PTE_R | PTE_W);
+  }
 
   // Set up new context to start executing at forkret,
   // which returns to user space.
@@ -208,6 +210,16 @@ proc_freepagetable(pagetable_t pagetable, uint64 sz)
   uvmfree(pagetable, sz);
 }
 
+// Copy user page table to kernel page table in address space below PLIC.
+int proc_copypagetable(pagetable_t src, uint64 src_sz, pagetable_t target, uint64 target_sz) {
+  printf("proc_copypagetable: src=%p, src_size=%d, target=%p, target_sz=%d\n", src, src_sz, target, target_sz);
+//  if(target_sz > 0) {
+//    uvmunmap(target, 0, PGROUNDUP(target_sz)/PGSIZE, 0);
+//  }
+  int ret = ukvmcopy(src, target, src_sz);
+  return ret;
+}
+
 // a user program that calls exec("/init")
 // od -t xC initcode
 uchar initcode[] = {
@@ -233,6 +245,9 @@ userinit(void)
   // and data into it.
   uvminit(p->pagetable, initcode, sizeof(initcode));
   p->sz = PGSIZE;
+  if (proc_copypagetable(p->pagetable, p->sz, p->kpagetable, 0) < 0) {
+    panic("proc_copypagetable");
+  }
 
   // prepare for the very first "return" from kernel to user.
   p->trapframe->epc = 0;      // user program counter
@@ -287,6 +302,12 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+
+  if (proc_copypagetable(np->pagetable, np->sz, np->kpagetable, 0) < 0) {
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
 
   np->parent = p;
 
@@ -501,6 +522,7 @@ scheduler(void)
 #if !defined (LAB_FS)
     if(found == 0) {
       intr_on();
+      kvminithart();
       asm volatile("wfi");
     }
 #else

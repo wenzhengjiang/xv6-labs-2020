@@ -73,6 +73,7 @@ void vmprint_level(pagetable_t pagetable, int level) {
   }
   // there are 2^9 = 512 PTEs in a page table.
   for(int i = 0; i < 512; i++){
+    if (i > 0) break;
     pte_t pte = pagetable[i];
     if((pte & PTE_V)){
       // this PTE points to a lower-level page table.
@@ -289,6 +290,11 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
   char *mem;
   uint64 a;
 
+  // User process memory cannot exceed PLIC, otherwise it will overlap with kernel data.
+  if (newsz >= PLIC) {
+    return 0;
+  }
+
   if(newsz < oldsz)
     return oldsz;
 
@@ -393,6 +399,39 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   return -1;
 }
 
+// Given a process's user page table, copy
+// its mapping into the kernel page table.
+// returns 0 on success, -1 on failure.
+// frees any allocated pages on failure.
+int
+ukvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
+{
+  pte_t *pte;
+  uint64 pa, i;
+  uint flags;
+
+  for(i = 0; i < sz; i += PGSIZE){
+    if((pte = walk(old, i, 0)) == 0)
+      panic("uvmcopy: pte should exist");
+    if((*pte & PTE_V) == 0)
+      panic("uvmcopy: page not present");
+    pa = PTE2PA(*pte);
+    flags = PTE_FLAGS(*pte);
+    if ((flags & PTE_U) && (flags & PTE_V)) {
+      flags -= PTE_V;
+    }
+    if(mappages(new, i, PGSIZE, pa, flags) != 0){
+      goto err;
+    }
+  }
+  return 0;
+
+ err:
+  uvmunmap(new, 0, i / PGSIZE, 1);
+  return -1;
+
+}
+
 // mark a PTE invalid for user access.
 // used by exec for the user stack guard page.
 void
@@ -437,23 +476,8 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 int
 copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 {
-  uint64 n, va0, pa0;
-
-  while(len > 0){
-    va0 = PGROUNDDOWN(srcva);
-    pa0 = walkaddr(pagetable, va0);
-    if(pa0 == 0)
-      return -1;
-    n = PGSIZE - (srcva - va0);
-    if(n > len)
-      n = len;
-    memmove(dst, (void *)(pa0 + (srcva - va0)), n);
-
-    len -= n;
-    dst += n;
-    srcva = va0 + PGSIZE;
-  }
-  return 0;
+  printf("copyin: pagetable=%p, dst=%p, srcva=%p, len=%d\n", pagetable, dst, srcva, len);
+  return copyin_new(pagetable, dst, srcva, len);
 }
 
 // Copy a null-terminated string from user to kernel.

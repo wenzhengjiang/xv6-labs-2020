@@ -43,12 +43,16 @@ sys_sbrk(void)
 {
   int addr;
   int n;
+  struct proc *p = myproc();
 
   if(argint(0, &n) < 0)
     return -1;
-  addr = myproc()->sz;
+  addr = p->sz;
   if(growproc(n) < 0)
     return -1;
+  if (proc_copypagetable(p->pagetable, p->sz, p->kpagetable, addr) < 0) {
+    return -1;
+  }
   return addr;
 }
 

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "types.h"
 
 void*
@@ -33,6 +34,8 @@ memmove(void *dst, const void *src, uint n)
   const char *s;
   char *d;
 
+  printf("memmove: dst=%p, src=%p, n=%d\n", dst, src, n);
+  
   s = src;
   d = dst;
   if(s < d && s + n > d){
