@@ -50,7 +50,7 @@ sys_sbrk(void)
   addr = p->sz;
   if(growproc(n) < 0)
     return -1;
-  if (proc_copypagetable(p->pagetable, p->sz, p->kpagetable, addr) < 0) {
+  if (proc_syncpagetables(p, addr) < 0) {
     return -1;
   }
   return addr;

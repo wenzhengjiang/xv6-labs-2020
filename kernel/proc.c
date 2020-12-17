@@ -210,14 +210,9 @@ proc_freepagetable(pagetable_t pagetable, uint64 sz)
   uvmfree(pagetable, sz);
 }
 
-// Copy user page table to kernel page table in address space below PLIC.
-int proc_copypagetable(pagetable_t src, uint64 src_sz, pagetable_t target, uint64 target_sz) {
-  printf("proc_copypagetable: src=%p, src_size=%d, target=%p, target_sz=%d\n", src, src_sz, target, target_sz);
-//  if(target_sz > 0) {
-//    uvmunmap(target, 0, PGROUNDUP(target_sz)/PGSIZE, 0);
-//  }
-  int ret = ukvmcopy(src, target, src_sz);
-  return ret;
+// Sync kernel page table with user page table PLIC.
+int proc_syncpagetables(struct proc *p, uint64 old_sz) {
+  return vmcopy(p->pagetable, p->sz, p->kpagetable, old_sz, ~(PTE_U | PTE_W | PTE_X));
 }
 
 // a user program that calls exec("/init")
@@ -245,8 +240,8 @@ userinit(void)
   // and data into it.
   uvminit(p->pagetable, initcode, sizeof(initcode));
   p->sz = PGSIZE;
-  if (proc_copypagetable(p->pagetable, p->sz, p->kpagetable, 0) < 0) {
-    panic("proc_copypagetable");
+  if (proc_syncpagetables(p, 0) < 0) {
+    panic("proc_syncpagetables");
   }
 
   // prepare for the very first "return" from kernel to user.
@@ -270,6 +265,11 @@ growproc(int n)
   struct proc *p = myproc();
 
   sz = p->sz;
+  // process memory cannot exceed PLIC, otherwise it will overlap with kernel data.
+  if (sz + n >= PLIC) {
+    return -1;
+  }
+
   if(n > 0){
     if((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
       return -1;
@@ -303,7 +303,7 @@ fork(void)
   }
   np->sz = p->sz;
 
-  if (proc_copypagetable(np->pagetable, np->sz, np->kpagetable, 0) < 0) {
+  if (proc_syncpagetables(np, 0) < 0) {
     freeproc(np);
     release(&np->lock);
     return -1;
