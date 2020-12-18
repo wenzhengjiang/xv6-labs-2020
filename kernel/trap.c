@@ -77,8 +77,17 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
+  if(which_dev == 2) {
+    if (p->is_alarm_handler_running == 0 && p->alarm_timeout > 0 && ++p->alarm_ticks == p->alarm_timeout) {
+      // Store the current trapframe from user space before executing the alart handler.
+      *(p->alarm_trapframe) = *(p->trapframe);
+      p->trapframe->epc = (uint64)p->alarm_handler;
+      //TODO: Do we need to clear other trapframe data?
+      p->alarm_ticks = 0;
+      p->is_alarm_handler_running = 1;
+    } 
     yield();
+  }
 
   usertrapret();
 }
