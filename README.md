@@ -28,4 +28,15 @@ Implemented a per-process kernel page table which also includes user memory mapp
 
 This lab was a lot of harder than the previous two. Page table looked easy, yet, it's powerful and not straightforward to use. I was glad I learned a lot more about it after this lab.
 
-NOTE: I did not pass the "execout" test for the kernel page table user mapping.
+Notes:
+* MMU gets the physical addr of the page table and uses it to translate virtual address to physical address.
+* The page table in xv6 is a tree structure with page-sized nodes. 
+* Each non-leaf node contains 512 PTEs. Each PTE contains the physical addr of another PTE or leaf node and permission.
+* Each leaf node is a physical memory page.
+* Kernel page table is directly mapped to physical memory, so we won't have this "how to get physical addr of page table before setting up MMU" problem.
+* I did not pass the "execout" test for the kernel page table user mapping :(
+
+### [Traps](https://github.com/wenzhengjiang/xv6-labs-2020/tree/traps)
+
+Note:
+* In xv6, each process has exactly one kernel stack page and user stack page, which store all the function calls states in kernel space and user space respectively.
