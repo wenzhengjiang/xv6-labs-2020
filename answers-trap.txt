@@ -1,0 +1,15 @@
+Q:
+Which registers contain arguments to functions? For example, which register holds 13 in main's call to printf?
+A:
+a0, a1, a2
+
+Q:
+Where is the call to function f in the assembly code for main? Where is the call to g? (Hint: the compiler may inline functions.)
+A:
+f is not explictly called as it's optimized to a constant in main.
+g is not explictly called as it's inlined in f.
+
+Q:
+At what address is the function printf located?
+A:
+0x628
