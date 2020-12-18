@@ -37,6 +37,10 @@ Notes:
 * I did not pass the "execout" test for the kernel page table user mapping :(
 
 ### [Traps](https://github.com/wenzhengjiang/xv6-labs-2020/tree/traps)
+Implemented backtrace by walking up the stack, and periodic callback system calls.
+
+This lab requires a good understanding about what's happending during the trap. I was surprised how easy to implement callback is the os level with a bit of hacking in trap functions.
 
 Note:
 * In xv6, each process has exactly one kernel stack page and user stack page, which store all the function calls states in kernel space and user space respectively.
+* All necessary trap handling data is stored in the trapframe. which includes the registers and a few kernel states.
