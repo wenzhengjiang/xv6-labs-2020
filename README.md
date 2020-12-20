@@ -44,3 +44,8 @@ This lab requires a good understanding about what's happending during the trap. 
 Note:
 * In xv6, each process has exactly one kernel stack page and user stack page, which store all the function calls states in kernel space and user space respectively.
 * All necessary trap handling data is stored in the trapframe. which includes the registers and a few kernel states.
+
+### [Lazy](https://github.com/wenzhengjiang/xv6-labs-2020/tree/lazy)
+Implemented lazy allocation for sbrk.
+
+No new idea in this lab, but lazy allocation is a good demonstration of how flexible the os can be by combining page table and trap(page fault).
