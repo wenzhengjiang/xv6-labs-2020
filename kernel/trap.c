@@ -69,20 +69,15 @@ usertrap(void)
     // ok
   } else if (r_scause() == 15) {
     uint64 fault_addr = r_stval();
-    char *mem;
     if (fault_addr >= p->sz) {
       printf("usertrap(): page fault address is out of process memory %p sz=%p pid=%d\n", fault_addr, p->sz, p->pid);
       p->killed = 1;
     } else if (fault_addr < PGROUNDDOWN(p->trapframe->sp)) {
       printf("usertrap(): page fault address is below user stack memory %p stack=%p pid=%d\n", fault_addr, p->trapframe->sp, p->pid);
       p->killed = 1;
-    } else if ((mem = kalloc()) == 0) {
-      printf("usertrap(): failed to alloc memory on page fault %p pid=%d\n", fault_addr, p->pid);
-      p->killed = 1;
     } else {
-      memset(mem, 0, PGSIZE);
-      if (mappages(p->pagetable, PGROUNDDOWN(fault_addr), PGSIZE, (uint64)mem, PTE_W|PTE_R|PTE_U) != 0) {
-        kfree(mem);
+      if (uvmalloc_page(p->pagetable, fault_addr) == 0) {
+        printf("usertrap(): failed to alloc memory on page fault %p pid=%d\n", fault_addr, p->pid);
         p->killed = 1;
       }
     }
