@@ -49,6 +49,8 @@ int cowfault(pagetable_t pagetable, uint64 va) {
 
   *pte = PA2PTE(pa2) | PTE_V | PTE_U | PTE_R | PTE_W | PTE_X;
 
+  kfree((void *)pa1);
+
   return 0;
 }
 
