@@ -49,3 +49,20 @@ Note:
 Implemented lazy allocation for sbrk.
 
 No new idea in this lab, but lazy allocation is a good demonstration of how flexible the os can be by combining page table and trap(page fault).
+
+### [COW](https://github.com/wenzhengjiang/xv6-labs-2020/tree/cow2)
+Implemented copy-on-write fork.
+
+This is another great lab (besides of the page table one). Specifically I learned a lot from [this instructer's solution](https://www.youtube.com/watch?v=S8ZTJKzhQao&feature=youtu.be) which desmonstrated how to take baby-steps and verify each step.
+
+My commit history for this lab is like below, with each commit represents a baby-step.
+
+```
+Wed Dec 23 12:19:56 cow: Modified fork so parent and child share the same physical pages and got store page fault as expected
+Wed Dec 23 12:21:35 cow: Modified traps so the store page fault on copy-on-write page get handled, and met the problem that freeproc freed pages what are still used by parent process
+Wed Dec 23 12:52:29 cow: Added reference count so we don't delete page that is sill being used, got OOM because COW does not free page
+Wed Dec 23 12:53:23 cow: free page in OOM and passed three test, but failed at file test
+Wed Dec 23 13:18:53 cow: file test failed because all processes shared the same copy-on-write page; Fixed it by properly handling COW in copyout; Passed cowtest but usertests failed with panic walk.
+Wed Dec 23 13:24:46 cow: Fixed panic walk by checking input address in copytout
+Wed Dec 23 14:00:53 cow: got a zero pointer bug in memmove, and found and fixed the bug with gdb
+```
