@@ -361,7 +361,20 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
-    pa0 = walkaddr(pagetable, va0);
+
+    pte_t *pte = walk(pagetable, va0, 0);
+    if (pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0)
+      return -1;
+    
+    // In the current xv6, this is the only case when a page is copy-on-write
+    if ((*pte == PTE_W) == 0) {
+      if (cowfault(pagetable, va0) < 0) {
+        return -1;
+      }
+    }
+
+    pa0 = PTE2PA(*pte);
+
     if(pa0 == 0)
       return -1;
     n = PGSIZE - (dstva - va0);
