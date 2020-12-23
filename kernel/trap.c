@@ -42,7 +42,7 @@ int cowfault(pagetable_t pagetable, uint64 va) {
 
   uint64 pa2 = (uint64) kalloc();
   if (pa2 == 0) {
-    printf("cow kalloc failed\n");
+    panic("cow kalloc failed\n");
   }
 
   memmove((void*)pa2, (void*)pa1, 4096);

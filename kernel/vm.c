@@ -370,7 +370,7 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
       return -1;
     
     // In the current xv6, this is the only case when a page is copy-on-write
-    if ((*pte == PTE_W) == 0) {
+    if ((*pte & PTE_W) == 0) {
       if (cowfault(pagetable, va0) < 0) {
         return -1;
       }
