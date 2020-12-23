@@ -53,7 +53,7 @@ No new idea in this lab, but lazy allocation is a good demonstration of how flex
 ### [COW](https://github.com/wenzhengjiang/xv6-labs-2020/tree/cow2)
 Implemented copy-on-write fork.
 
-This is another great lab (besides of the page table one). Specifically I learned a lot from [this instructer's solution](https://www.youtube.com/watch?v=S8ZTJKzhQao&feature=youtu.be) which desmonstrated how to take baby-steps and verify each step.
+This is another great lab (besides of the page table one). Specifically I learned a lot from [the instructer's solution](https://www.youtube.com/watch?v=S8ZTJKzhQao&feature=youtu.be) which was a good desmonstration on taking baby-steps and verify each step.
 
 My commit history for this lab is like below, with each commit represents a baby-step.
 
