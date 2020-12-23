@@ -328,6 +328,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     //  kfree(mem);
       goto err;
     }
+    incref(pa);
     *pte &= ~PTE_W;
   }
   return 0;
