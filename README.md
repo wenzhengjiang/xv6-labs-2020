@@ -66,3 +66,8 @@ Wed Dec 23 13:18:53 cow: file test failed because all processes shared the same 
 Wed Dec 23 13:24:46 cow: Fixed panic walk by checking input address in copytout
 Wed Dec 23 14:00:53 cow: got a zero pointer bug in memmove, and found and fixed the bug with gdb
 ```
+
+### [COW](https://github.com/wenzhengjiang/xv6-labs-2020/tree/thread)
+Implemented a simple user-level threading library and some threading programs.
+
+This is a fairly straightforward lab, yet I was still amazed how simple threading can be implemented (by restoring and recovering a few registers).
