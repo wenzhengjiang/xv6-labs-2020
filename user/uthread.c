@@ -99,7 +99,7 @@ thread_create(void (*func)())
   // YOUR CODE HERE
   memset(&t->context, 0, sizeof(t->context));
   t->context.ra = (uint64)func;
-  t->context.sp = (uint64)t->stack;
+  t->context.sp = (uint64)t->stack + STACK_SIZE;
 }
 
 void 
