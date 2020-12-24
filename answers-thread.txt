@@ -1,0 +1,5 @@
+Q1:
+1. thread1 is inserting key1 in bucket 1 and found entry A is the current head bucket 1.
+2. thread2 is inserting key1 in bucket 1 and also found entry A is the current head bucket 1.
+3. thread1 creates entryB and sets it to be the new bucket 1 head entry whose next is entryA
+4. thread2 creates entryC and sets it to be the new bucket 1 head entry whose next is entryA. # <= This makes entryB get lost.
