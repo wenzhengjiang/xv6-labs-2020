@@ -11,7 +11,7 @@ https://github.com/riscv/riscv-gnu-toolchain, and qemu compiled for
 riscv64-softmmu. Once they are installed, and in your shell
 search path, you can run "make qemu".
 
-## Labs
+## Lab Notes
 
 ### [Unix utilities](https://github.com/wenzhengjiang/xv6-labs-2020/tree/pgtbl)
 Did some warmup exercises for getting used to C and unix syscalls. 
@@ -67,12 +67,12 @@ Wed Dec 23 13:24:46 cow: Fixed panic walk by checking input address in copytout
 Wed Dec 23 14:00:53 cow: got a zero pointer bug in memmove, and found and fixed the bug with gdb
 ```
 
-### [COW](https://github.com/wenzhengjiang/xv6-labs-2020/tree/thread)
+### [Thread](https://github.com/wenzhengjiang/xv6-labs-2020/tree/thread)
 Implemented a simple user-level threading library and some threading programs.
 
 This is a fairly straightforward lab, yet I was still amazed how simple threading can be implemented (by restoring and recovering a few registers).
 
-### [COW](https://github.com/wenzhengjiang/xv6-labs-2020/tree/lock)
+### [Lock](https://github.com/wenzhengjiang/xv6-labs-2020/tree/lock)
 Improve parallelism of memory allocator and block cache by reducing lock contention.
 
 This is quite fun lab. The way to reduce lock contention is usually using more fine-grained locks, but that ofen introduces deadlock issues, which is the main challenge for this lab.
