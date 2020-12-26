@@ -21,7 +21,6 @@ struct run {
 struct {
   struct spinlock lock;
   struct run *freelist;
-  int available_pages;
 } kmems[NCPU];
 
 void
@@ -29,7 +28,6 @@ kinit()
 {
   for (int i = 0; i < NCPU; i++) {
     initlock(&kmems[i].lock, "kmem");
-    kmems[i].available_pages = 0;
   }
   freerange(end, (void*)PHYSTOP);
 }
@@ -61,43 +59,11 @@ kfree(void *pa)
   r = (struct run*)pa;
   push_off();
   int cid = cpuid();
-  pop_off();
   acquire(&kmems[cid].lock);
   r->next = kmems[cid].freelist;
   kmems[cid].freelist = r;
-  kmems[cid].available_pages++;
   release(&kmems[cid].lock);
-}
-
-void steal_pages_if_necessary(void) {
-  push_off();
-  int cid = cpuid();
   pop_off();
-
-  acquire(&kmems[cid].lock);
-  if (kmems[cid].available_pages > 0) {
-    release(&kmems[cid].lock);
-    return;
-  }
-
-  // Steal half of the available pages from next cpu that has free memory.
-  for(int i = (cid+1)%NCPU; i != cid && kmems[cid].available_pages == 0; i = (i+1)%NCPU) {
-    acquire(&kmems[i].lock);
-    if (kmems[i].available_pages > 0) {
-      int pages_stolen = (kmems[i].available_pages+1) / 2;
-      struct run *r;
-      for (int j = 0; j < pages_stolen; j++) {
-        r = kmems[i].freelist;
-        kmems[i].freelist = r->next;
-        r->next = kmems[cid].freelist;
-        kmems[cid].freelist = r;
-      }
-      kmems[i].available_pages -= pages_stolen;
-      kmems[cid].available_pages += pages_stolen;
-    }
-    release(&kmems[i].lock);
-  } 
-  release(&kmems[cid].lock);
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -110,19 +76,34 @@ kalloc(void)
 
   push_off();
   int cid = cpuid();
-  pop_off();
-
-  steal_pages_if_necessary();
 
   acquire(&kmems[cid].lock);
   r = kmems[cid].freelist;
   if(r) {
     kmems[cid].freelist = r->next;
-    kmems[cid].available_pages--;
   }
   release(&kmems[cid].lock);
 
+  // If the current CPU does not have free memory, steal one from another CPU. Note that:
+  //
+  //    1. Make sure to acquire locks of other CPUs based on a specific order to avoid deadlock.
+  //    2. once a page is stolen by a cpu, it will belong to that cpu after that page is freed.
+  //       In that way, the free memory that originally belongs to the freerange cpu will be gradually
+  //       moved to other cpus. 
+  if (!r) {
+    for(int i = 0; i < NCPU && !r; i++) {
+      acquire(&kmems[i].lock);
+      r = kmems[i].freelist;
+      if (r) {
+        kmems[i].freelist = r->next;
+      }
+      release(&kmems[i].lock);
+    }
+  }
+
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
+
+  pop_off();
   return (void*)r;
 }
