@@ -55,7 +55,7 @@ Implemented copy-on-write fork.
 
 This is another great lab (besides of the page table one). Specifically I learned a lot from [the instructer's solution](https://www.youtube.com/watch?v=S8ZTJKzhQao&feature=youtu.be) which was a good desmonstration on taking baby-steps and verify each step.
 
-My commit history for this lab is like below, with each commit represents a baby-step.
+My commit history describes my strategy for tackling this lab. Each commit represents a baby-step for implementing the solution.
 
 ```
 Wed Dec 23 12:19:56 cow: Modified fork so parent and child share the same physical pages and got store page fault as expected
@@ -71,3 +71,12 @@ Wed Dec 23 14:00:53 cow: got a zero pointer bug in memmove, and found and fixed 
 Implemented a simple user-level threading library and some threading programs.
 
 This is a fairly straightforward lab, yet I was still amazed how simple threading can be implemented (by restoring and recovering a few registers).
+
+### [COW](https://github.com/wenzhengjiang/xv6-labs-2020/tree/lock)
+Improve parallelism of memory allocator and block cache by reducing lock contention.
+
+This is quite fun lab. The way to reduce lock contention is usually using more fine-grained locks, but that ofen introduces deadlock issues, which is the main challenge for this lab.
+
+Note:
+* In the per-cpu memory allocator implementation, it's possible to at most acquire a freelist lock at one time if every time only one page is stolen by a cpu.
+* In the block cache implementation, it is unavoidable to acquire multiple locks when moving a buffer from one bucket to another bucket, and it has to be in a critical section. I managed to minimize the critical section to only cover the buffer evication part, so there wasn't many lock conflits caused in the tests.
