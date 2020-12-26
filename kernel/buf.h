@@ -9,5 +9,6 @@ struct buf {
   struct buf *next;
   uchar data[BSIZE];
   uint last_time_used;
+  int id;
 };
 
