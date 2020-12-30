@@ -520,10 +520,11 @@ uint64 sys_symlink(void) {
   }
 
   if (writei(ip, 0, (uint64)target, 0, strlen(target)) < 0) {
+    iunlockput(ip);
     end_op();
     return -1;
   }
-  iunlock(ip);
+  iunlockput(ip);
   end_op();
 
   return 0;
