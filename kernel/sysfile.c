@@ -309,7 +309,7 @@ sys_open(void)
       return -1;
     }
     ilock(ip);
-    struct inode* initial_ip = ip;
+    uint initial_inum = ip->inum;
     while (!(omode & O_NOFOLLOW) && ip->type == T_SYMLINK) {
       if (readi(ip, 0, (uint64)path, 0, MAXPATH) == 0) {
         iunlockput(ip);
@@ -322,7 +322,7 @@ sys_open(void)
         return -1;
       }
       ilock(ip);
-      if (ip == initial_ip) { // Circle
+      if (ip->inum == initial_inum) { // Circle
         iunlockput(ip);
         end_op();
         return -1;
