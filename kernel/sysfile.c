@@ -484,3 +484,8 @@ sys_pipe(void)
   }
   return 0;
 }
+
+uint64 symlink(char *target, char *path) {
+  //TODO: Add code
+  return 0;
+}
