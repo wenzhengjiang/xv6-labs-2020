@@ -309,6 +309,25 @@ sys_open(void)
       return -1;
     }
     ilock(ip);
+    struct inode* initial_ip = ip;
+    while (!(omode & O_NOFOLLOW) && ip->type == T_SYMLINK) {
+      if (readi(ip, 0, (uint64)path, 0, MAXPATH) == 0) {
+        iunlockput(ip);
+        end_op();
+        return -1;
+      }
+      iunlockput(ip);
+      if((ip = namei(path)) == 0){
+        end_op();
+        return -1;
+      }
+      ilock(ip);
+      if (ip == initial_ip) { // Circle
+        iunlockput(ip);
+        end_op();
+        return -1;
+      }
+    }
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
