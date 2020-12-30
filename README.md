@@ -73,10 +73,18 @@ Implemented a simple user-level threading library and some threading programs.
 This is a fairly straightforward lab, yet I was still amazed how simple threading can be implemented (by restoring and recovering a few registers).
 
 ### [Lock](https://github.com/wenzhengjiang/xv6-labs-2020/tree/lock)
-Improve parallelism of memory allocator and block cache by reducing lock contention.
+Improved parallelism of memory allocator and block cache by reducing lock contention.
 
 This is quite fun lab. The way to reduce lock contention is usually using more fine-grained locks, but that ofen introduces deadlock issues, which is the main challenge for this lab.
 
 Note:
 * In the per-cpu memory allocator implementation, it's possible to at most acquire a freelist lock at one time if every time only one page is stolen by a cpu.
 * In the block cache implementation, it is unavoidable to acquire multiple locks when moving a buffer from one bucket to another bucket, and it has to be in a critical section. I managed to minimize the critical section to only cover the buffer evication part, so there wasn't many lock conflits caused in the tests.
+
+### [File system](https://github.com/wenzhengjiang/xv6-labs-2020/tree/fs)
+Improved the filesystem to support large files and symbolic links.
+
+This labs is mainly used to enhance your understanding of inode and pathname implementation of xv6 filesystem.
+
+Note:
+* in-memory inodes is managed by a reference count mechanism. For example, `open` a file will increase the reference count for the underlying inode.
