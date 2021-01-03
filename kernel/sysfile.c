@@ -486,13 +486,29 @@ sys_pipe(void)
 }
 
 uint64 sys_mmap(void) {
+  struct proc * proc = myproc();
+  struct VMA *vma = 0;
+  for(int i = 0; i < NVMA; i++) {
+    if (proc->vmas[i].addr == 0) {
+      vma = &proc->vmas[i];
+      break;
+    }
+  }
+  if (!vma)
+    return -1;
+
   uint64 addr;
-  int length, prot, flags, fd, offset;
   if (argaddr(0, &addr) < 0)
     return -1;
-  if (argint(1, &length) < 0 || argint(2, &prot) < 0 || argint(3, &flags) < 0 || argfd(4, &fd, 0) < 0 || argint(5, &offset) < 0)
+
+  if (argint(1, &vma->length) < 0 || argint(2, &vma->perm) < 0 || argint(3, &vma->flags) < 0 || argfd(4, 0, &vma->file) < 0 || argint(5, &vma->offset) < 0)
     return -1;
-  return -1;
+
+  vma->file->ref++;
+  vma->addr = myproc()->sz;
+  myproc()->sz += PGROUNDUP(vma->length);
+
+  return vma->addr;
 }
 
 uint64 sys_munmap(void) {
