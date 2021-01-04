@@ -501,7 +501,9 @@ uint64 sys_mmap(void) {
   if (argaddr(0, &addr) < 0)
     return -1;
 
-  if (argint(1, &vma->length) < 0 || argint(2, &vma->perm) < 0 || argint(3, &vma->flags) < 0 || argfd(4, 0, &vma->file) < 0 || argint(5, &vma->offset) < 0)
+  if (argint(1, &vma->length) < 0 || argint(2, &vma->perm) < 0 ||
+      argint(3, &vma->flags) < 0 || argfd(4, 0, &vma->file) < 0 ||
+      argint(5, &vma->offset) < 0)
     return -1;
 
   vma->file->ref++;
@@ -511,12 +513,72 @@ uint64 sys_mmap(void) {
   return vma->addr;
 }
 
+void
+munmap(struct vma *vma, pagetable_t pagetable, uint64 va, uint64 npages)
+{
+  uint64 a;
+  pte_t *pte;
+
+  if((va % PGSIZE) != 0)
+    panic("munmap: not aligned");
+
+  for(a = va; a < va + npages*PGSIZE; a += PGSIZE){
+    if((pte = walk(pagetable, a, 0)) == 0)
+      panic("munmap: walk");
+    if((*pte & PTE_V) == 0)
+      continue;
+    if(PTE_FLAGS(*pte) == PTE_V)
+      panic("munmap: not a leaf");
+
+    if((vma->flags & MAP_SHARED) && PTE_FLAGS(*pte) == PTE_D) {
+      filewrite(vma->file, a, PGSIZE);
+    }
+
+    uint64 pa = PTE2PA(*pte);
+    kfree((void*)pa);
+
+    *pte = 0;
+  }
+}
+
 uint64 sys_munmap(void) {
   uint64 addr;
   int length;
 
   if (argaddr(0, &addr) < 0 || argint(1, &length))
     return -1;
+  
+  if (PGROUNDDOWN(addr) != addr)
+    panic("munmap");
+  if (length % PGSIZE != 0)
+    panic("munmap");
+  
+  struct proc * p = myproc();
+  struct vma *vma = 0;
+  for(int i = 0; i < NVMA; i++) {
+    if (p->vmas[i].addr >= addr && p->vmas[i].addr+p->vmas[i].length >= addr + length) {
+      vma = &p->vmas[i];
+      break;
+    }
+//    printf("%p %n %p %n\n", p->vmas[i].addr, p->vmas[i].length, addr,  length);
+  }
+  if (!vma)
+    return -1;
 
-  return -1;
+  if (vma->addr == addr) {
+    vma->addr = addr+length;
+  } else if (vma->addr+vma->length == addr+length) {
+    vma->addr = addr;
+  } else {
+    // Only support unmapping at the start, or at the end, or the whole region.
+    panic("munmap");
+  }
+  munmap(vma, p->pagetable, addr, length / PGSIZE);
+  vma->length = vma->length - length;
+  if (length == 0) {
+    vma->file->ref--;
+    memset(vma, 0, sizeof(struct vma));
+  }
+
+  return 0;
 }
