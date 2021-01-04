@@ -506,6 +506,12 @@ uint64 sys_mmap(void) {
       argint(5, &vma->offset) < 0)
     return -1;
 
+  if ((vma->flags & MAP_SHARED) && (vma->perm & PROT_READ) && !vma->file->readable)
+    return -1;
+
+  if ((vma->flags & MAP_SHARED) && (vma->perm & PROT_WRITE) && !vma->file->writable)
+    return -1;
+
   vma->file->ref++;
   vma->addr = proc->sz;
   myproc()->sz += PGROUNDUP(vma->length);
