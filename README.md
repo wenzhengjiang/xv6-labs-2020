@@ -88,3 +88,11 @@ This labs is mainly used to enhance your understanding of inode and pathname imp
 
 Note:
 * in-memory inodes is managed by a reference count mechanism. For example, `open` a file will increase the reference count for the underlying inode.
+
+### [Mmap](https://github.com/wenzhengjiang/xv6-labs-2020/tree/mmap)
+Implemented mmap and munmap system calls.
+
+This labs is not difficult to complete as long as you carefully take  small steps.
+
+Note:
+* in-memory inodes is managed by a reference count mechanism. For example, `open` a file will increase the reference count for the underlying inode.
