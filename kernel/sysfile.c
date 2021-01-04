@@ -536,7 +536,7 @@ munmap(struct vma *vma, pagetable_t pagetable, uint64 va, uint64 npages)
     if(PTE_FLAGS(*pte) == PTE_V)
       panic("munmap: not a leaf");
 
-    if((vma->flags & MAP_SHARED) && PTE_FLAGS(*pte) == PTE_D) {
+    if((vma->flags & MAP_SHARED) && (PTE_FLAGS(*pte) & PTE_D)) {
       filewrite(vma->file, a, PGSIZE);
     }
 
