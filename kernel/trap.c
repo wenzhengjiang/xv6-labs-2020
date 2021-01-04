@@ -5,6 +5,10 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "fcntl.h"
+#include "fs.h"
+#include "sleeplock.h"
+#include "file.h"
 
 struct spinlock tickslock;
 uint ticks;
@@ -27,6 +31,43 @@ void
 trapinithart(void)
 {
   w_stvec((uint64)kernelvec);
+}
+
+int allocate_mapped_page(uint64 addr) {
+  struct proc * p = myproc();
+  struct vma *vma = 0;
+
+  for (int i = 0 ; i < NVMA; i++) {
+    if (p->vmas[i].addr <= addr && p->vmas[i].length > addr-p->vmas[i].addr) {
+      vma = &p->vmas[i];
+      break;
+    }
+  }
+
+  if (!vma)
+    return -1;
+
+  uint64 fault_page = PGROUNDDOWN(addr);
+  char *mem =  kalloc();
+  if (mem == 0) {
+    printf("allocate_mapped_page failed %d: kalloc\n", p->pid);
+    return -1;
+  } 
+
+  memset(mem, 0, PGSIZE);
+  acquiresleep(&vma->file->ip->lock);
+  readi(vma->file->ip, 0, (uint64)mem, fault_page - vma->addr, PGSIZE);
+  releasesleep(&vma->file->ip->lock);
+
+  int flags = PTE_U;
+  if (vma->perm & PROT_READ) flags |= PTE_R;
+  if (vma->perm & PROT_WRITE) flags |= PTE_W;
+
+  if (mappages(p->pagetable, fault_page, PGSIZE, (uint64)mem, flags) != 0) {
+    kfree(mem);
+    return 1;
+  }
+  return 0;
 }
 
 //
@@ -65,6 +106,11 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } else if(r_scause() == 13 || r_scause() == 15){
+//    printf("usertrap() %p pid=%d\n", r_stval(), myproc()->pid);
+    if (allocate_mapped_page(r_stval()) < 0) {
+      p->killed = 1;
+    }
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {

@@ -487,7 +487,7 @@ sys_pipe(void)
 
 uint64 sys_mmap(void) {
   struct proc * proc = myproc();
-  struct VMA *vma = 0;
+  struct vma *vma = 0;
   for(int i = 0; i < NVMA; i++) {
     if (proc->vmas[i].addr == 0) {
       vma = &proc->vmas[i];
@@ -505,7 +505,7 @@ uint64 sys_mmap(void) {
     return -1;
 
   vma->file->ref++;
-  vma->addr = myproc()->sz;
+  vma->addr = proc->sz;
   myproc()->sz += PGROUNDUP(vma->length);
 
   return vma->addr;
