@@ -5,6 +5,9 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "fs.h"
+#include "sleeplock.h"
+#include "file.h"
 
 struct cpu cpus[NCPU];
 
@@ -282,6 +285,14 @@ fork(void)
   }
   np->sz = p->sz;
 
+  // Copy mmapped pages from parent to child.
+  for(int i = 0; i < NVMA; i++) {
+    np->vmas[i] = p->vmas[i];
+    if (np->vmas[i].addr) {
+      np->vmas[i].file->ref++;
+    }
+  }
+
   np->parent = p;
 
   // copy saved user registers.
@@ -343,6 +354,11 @@ exit(int status)
 
   if(p == initproc)
     panic("init exiting");
+
+  for(int i = 0; i < NVMA; i++) {
+    if (p->vmas[i].addr == 0) continue;
+    p->vmas[i].file->ref--;
+  }
 
   // Close all open files.
   for(int fd = 0; fd < NOFILE; fd++){
