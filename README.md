@@ -16,7 +16,7 @@ search path, you can run "make qemu".
 ### [Unix utilities](https://github.com/wenzhengjiang/xv6-labs-2020/tree/pgtbl)
 Did some warmup exercises for getting used to C and unix syscalls. 
 
-Generally easy to complete. But pipes were quite interesting to play with :)
+Generally easy to complete. And pipes are quite interesting to play with :)
 
 ### [System calls](https://github.com/wenzhengjiang/xv6-labs-2020/tree/syscall)
 Implemented two simple syscalls.
@@ -26,7 +26,7 @@ Still fairly easy to complete.
 ### [Page tables](https://github.com/wenzhengjiang/xv6-labs-2020/tree/pgtbl)
 Implemented a per-process kernel page table which also includes user memory mapping.
 
-This lab was a lot of harder than the previous two. Page table looked easy, yet, it's powerful and not straightforward to use. I was glad I learned a lot more about it after this lab.
+This lab is a lot of harder than the previous two. Page table seems easy, but is powerful and not straightforward to use. I'm glad I learned a lot more about it after this lab.
 
 Notes:
 * MMU gets the physical addr of the page table and uses it to translate virtual address to physical address.
@@ -39,7 +39,7 @@ Notes:
 ### [Traps](https://github.com/wenzhengjiang/xv6-labs-2020/tree/traps)
 Implemented backtrace by walking up the stack, and periodic callback system calls.
 
-This lab requires a good understanding about what's happending during the trap. I was surprised how easy to implement callback is the os level with a bit of hacking in trap functions.
+This lab requires a good understanding about what's happending during the trap. I'm surprised how easy it is to implement callback in the os level with a only bit of hacking in trap functions.
 
 Note:
 * In xv6, each process has exactly one kernel stack page and user stack page, which store all the function calls states in kernel space and user space respectively.
@@ -53,7 +53,7 @@ No new idea in this lab, but lazy allocation is a good demonstration of how flex
 ### [COW](https://github.com/wenzhengjiang/xv6-labs-2020/tree/cow2)
 Implemented copy-on-write fork.
 
-This is another great lab (besides of the page table one). Specifically I learned a lot from [the instructer's solution](https://www.youtube.com/watch?v=S8ZTJKzhQao&feature=youtu.be) which was a good desmonstration on taking baby-steps and verify each step.
+This is another great lab (besides of the page table one). Specifically, I learned a lot from [the instructer's solution](https://www.youtube.com/watch?v=S8ZTJKzhQao&feature=youtu.be) which was a good desmonstration on taking baby-steps and verifing each step.
 
 My commit history describes my strategy for tackling this lab. Each commit represents a baby-step for implementing the solution.
 
@@ -70,7 +70,7 @@ Wed Dec 23 14:00:53 cow: got a zero pointer bug in memmove, and found and fixed 
 ### [Thread](https://github.com/wenzhengjiang/xv6-labs-2020/tree/thread)
 Implemented a simple user-level threading library and some threading programs.
 
-This is a fairly straightforward lab, yet I was still amazed how simple threading can be implemented (by restoring and recovering a few registers).
+This is a fairly straightforward lab, yet I'm still amazed how simple threading can be implemented (by restoring and recovering a few registers).
 
 ### [Lock](https://github.com/wenzhengjiang/xv6-labs-2020/tree/lock)
 Improved parallelism of memory allocator and block cache by reducing lock contention.
